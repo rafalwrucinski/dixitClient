@@ -16,7 +16,8 @@ public class GameContainer implements Runnable
 	private Input input;
 	private AbstractGame game;
 
-	private static ExecutorService executorService;
+	private ServerClientManager serverClientManager;
+
 
 	private boolean running = false;
 	private final double UPDATE_CAP = 1.0/60.0;
@@ -31,7 +32,6 @@ public class GameContainer implements Runnable
 	}
 
 	public void start(){
-		executorService = Executors.newFixedThreadPool(5);
 		window = new Window(this);
 		renderer = new Renderer(this);
 		input = new Input(this);
@@ -44,7 +44,7 @@ public class GameContainer implements Runnable
 
 	}
 
-	@Override
+
 	public void run(){
 		running = true;
 
@@ -76,6 +76,8 @@ public class GameContainer implements Runnable
 				game.update(this,(float)UPDATE_CAP);
 
 				input.update();
+
+
 
 				if(frameTime >=1.0){
 					frameTime = 0;
