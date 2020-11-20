@@ -1,7 +1,7 @@
 //package com.dixitClient;
 //
 //import com.dixitClient.dixit.Gamer;
-//import com.dixitClient.dixit.ServerClientManager;
+//import com.dixitClient.dixit.serverClient.ServerClientManager;
 //
 //import javax.swing.*;
 //import java.awt.*;

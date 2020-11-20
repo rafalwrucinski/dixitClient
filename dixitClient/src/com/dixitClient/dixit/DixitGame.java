@@ -8,12 +8,11 @@ import com.dixitClient.gameEngine.Renderer;
 import com.dixitClient.gameEngine.gfx.Image;
 import com.dixitClient.gameEngine.gfx.ImageTile;
 
-import javax.swing.*;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.dixitClient.gameEngine.GameContainer.submitted;
 
 enum State {
     LOGGING_STATE,
@@ -23,15 +22,13 @@ enum State {
 
 public class DixitGame extends AbstractGame {
     private State state;
-    private ServerClientManager serverClientManager;
+    private boolean sended=false;
 
-    private String serverResponse;
+    public static ExecutorService es;
 
     private Image startImage;
     private Image rectangleTransparent;
     private ImageTile textBox;
-
-    public static GameContainer gc;
 
     float temp = 0;
 
@@ -42,12 +39,14 @@ public class DixitGame extends AbstractGame {
         rectangleTransparent.setAlpha(true);
         textBox = new ImageTile("/textBox.png",800,100);
         textBox.setAlpha(true);
-        state=State.LOGGING_STATE;
+        state = State.LOGGING_STATE;
     }
 
     public static void main(String[] args) throws IOException {
+        es = Executors.newFixedThreadPool(10);
+
         LoginWindow window = new LoginWindow();
-        gc = new GameContainer(new DixitGame());
+        GameContainer gc = new GameContainer(new DixitGame());
 
         window.getFrame().setVisible(true);
         window.getFrame().setAlwaysOnTop(true);
@@ -60,40 +59,26 @@ public class DixitGame extends AbstractGame {
         gc.start();
     }
 
-    public boolean createSocket(){
-        try {
-            serverClientManager = new ServerClientManager(LoginManager.getIp(), LoginManager.getPort());
-            serverClientManager.setClientResponse("Connected as"+ LoginManager.getName());
-            return true;
-        } catch (IOException e){
-            JOptionPane.showMessageDialog(null, "Problem z połączeniem");
-            return false;
-        }
-    }
+
 
     @Override
     public void update(GameContainer gc, float deltaTime) {
 
         //LOGIN STATE
-        if(LoginManager.finish) {
-            LoginManager.finish=false;
-//            boolean result = createSocket();
-//            if(result)
+        if((LoginManager.finish) && (state==State.LOGGING_STATE)) {
+            if(GameContainer.connected)
                 state = State.WAITING_FOR_OTHERS;
-//            else {
-//                    LoginWindow window = new LoginWindow();
-//                    window.getFrame().setVisible(true);
-//            }
         }
 
-        if(state==State.WAITING_FOR_OTHERS) {
-            boolean isReady=false;
-            if (gc.getInput().isMouseButtonDown(3)) {
-                System.out.println("Left mouse clicked at:" + gc.getInput().getMouseX() + ", " + gc.getInput().getMouseY());
+        if(state == State.WAITING_FOR_OTHERS) {
+            if(submitted&&!sended){
+                gc.getClientResponder().setServerResponse("Connected as " + LoginManager.getName());
+                sended=true;
             }
-//            if(!serverClientManager.getServerRequest().isEmpty()){
 
-//            }
+            if (gc.getInput().isMouseButtonDown(3)) {
+                gc.getClientResponder().setServerResponse("Left mouse clicked at:" + gc.getInput().getMouseX() + ", " + gc.getInput().getMouseY());
+            }
         }
         if(state==State.START_GAME){
             if (gc.getInput().isMouseButtonDown(3)) {

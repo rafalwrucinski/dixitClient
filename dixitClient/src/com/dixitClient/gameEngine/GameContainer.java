@@ -1,12 +1,14 @@
 package com.dixitClient.gameEngine;
 
-import com.dixitClient.dixit.ServerClientManager;
+import com.dixitClient.dixit.DixitGame;
+import com.dixitClient.dixit.serverClient.ServerResponder;
+import com.dixitClient.dixit.serverClient.ServerClientManager;
 import com.dixitClient.dixit.login.LoginManager;
+import com.dixitClient.dixit.login.LoginWindow;
+import com.dixitClient.dixit.serverClient.ServerListener;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class GameContainer implements Runnable
 {
@@ -17,10 +19,14 @@ public class GameContainer implements Runnable
 	private AbstractGame game;
 
 	private ServerClientManager serverClientManager;
+	private ServerListener serverListener;
+	private ServerResponder serverResponder;
 
+	public static boolean connected= false;
+	public static boolean submitted = false;
 
 	private boolean running = false;
-	private final double UPDATE_CAP = 1.0/60.0;
+	private final double UPDATE_CAP = 1.0/20.0;
 	private int width = 1280;
 	private int height = 864;
 	private float scale = 1f;
@@ -37,7 +43,7 @@ public class GameContainer implements Runnable
 		input = new Input(this);
 
 		thread = new Thread(this);
-		thread.run();
+		DixitGame.es.execute(thread);
 	}
 
 	public void stop(){
@@ -59,6 +65,17 @@ public class GameContainer implements Runnable
 		int fps =0;
 
 		while(running){
+
+			if(LoginManager.finish && !connected) {
+				boolean result = createSocket();
+				if(result)
+					connected=true;
+				else {
+					LoginWindow window = new LoginWindow();
+					window.getFrame().setVisible(true);
+				}
+			}
+
 			render = false;
 
 			firstTime = Time.getTime();
@@ -76,8 +93,6 @@ public class GameContainer implements Runnable
 				game.update(this,(float)UPDATE_CAP);
 
 				input.update();
-
-
 
 				if(frameTime >=1.0){
 					frameTime = 0;
@@ -103,6 +118,25 @@ public class GameContainer implements Runnable
 			}
 		}
 		dispose();
+	}
+
+	public boolean createSocket(){
+		try {
+			serverClientManager = new ServerClientManager(LoginManager.getIp(), LoginManager.getPort());
+			serverListener = new ServerListener(serverClientManager);
+			serverResponder = new ServerResponder(serverClientManager);
+
+			Thread serverListenerThread = new Thread(serverListener);
+			DixitGame.es.execute(serverListenerThread);
+			Thread serverResponderThread = new Thread(serverResponder);
+			DixitGame.es.execute(serverResponderThread);
+			submitted =true;
+
+			return true;
+		} catch (IOException e){
+			JOptionPane.showMessageDialog(null, "Problem z połączeniem");
+			return false;
+		}
 	}
 
 	private void dispose(){
@@ -143,5 +177,17 @@ public class GameContainer implements Runnable
 
 	public Input getInput() {
 		return input;
+	}
+
+	public ServerClientManager getServerClientManager() {
+		return serverClientManager;
+	}
+
+	public ServerListener getServerListener() {
+		return serverListener;
+	}
+
+	public ServerResponder getClientResponder() {
+		return serverResponder;
 	}
 }
