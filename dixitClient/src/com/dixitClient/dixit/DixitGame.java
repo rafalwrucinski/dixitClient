@@ -5,6 +5,7 @@ import com.dixitClient.dixit.login.LoginWindow;
 import com.dixitClient.gameEngine.AbstractGame;
 import com.dixitClient.gameEngine.GameContainer;
 import com.dixitClient.gameEngine.Renderer;
+import com.dixitClient.gameEngine.gfx.CardImage;
 import com.dixitClient.gameEngine.gfx.Image;
 import com.dixitClient.gameEngine.gfx.ImageTile;
 
@@ -17,20 +18,21 @@ import static com.dixitClient.gameEngine.GameContainer.submitted;
 enum State {
     LOGGING_STATE,
     WAITING_FOR_OTHERS,
-    START_GAME;
+    START_GAME,
+    SHUFLE_CARDS;
 }
 
 public class DixitGame extends AbstractGame {
     private State state;
     private boolean sended=false;
+    private boolean temp= false;
 
     public static ExecutorService es;
 
     private Image startImage;
     private Image rectangleTransparent;
     private ImageTile textBox;
-
-    float temp = 0;
+    private CardImage cardImage;
 
     public DixitGame(){
         startImage = new Image("/dixitIcon.png");
@@ -39,17 +41,18 @@ public class DixitGame extends AbstractGame {
         rectangleTransparent.setAlpha(true);
         textBox = new ImageTile("/textBox.png",800,100);
         textBox.setAlpha(true);
-        state = State.LOGGING_STATE;
+//        state = State.LOGGING_STATE;
+        state = State.SHUFLE_CARDS;
     }
 
     public static void main(String[] args) throws IOException {
         es = Executors.newFixedThreadPool(10);
 
-        LoginWindow window = new LoginWindow();
+        //LoginWindow window = new LoginWindow();
         GameContainer gc = new GameContainer(new DixitGame());
 
-        window.getFrame().setVisible(true);
-        window.getFrame().setAlwaysOnTop(true);
+       // window.getFrame().setVisible(true);
+        //window.getFrame().setAlwaysOnTop(true);
 
 //        gc.setWidth(1280);
 //        gc.setHeight(720);
@@ -75,6 +78,15 @@ public class DixitGame extends AbstractGame {
                 gc.getClientResponder().setServerResponse("Connected as " + LoginManager.getName());
                 sended=true;
             }
+            try {
+                if (!gc.getServerListener().getServerRequestLast().isEmpty() && gc.getServerListener().getServerRequestLast() != null) {
+                    if (gc.getServerListener().getServerRequestLast().equals("Server is Responding")) {
+                        state = State.START_GAME;
+                    }
+                }
+            } catch (NullPointerException e){
+                return;
+            }
 
             if (gc.getInput().isMouseButtonDown(3)) {
                 gc.getClientResponder().setServerResponse("Left mouse clicked at:" + gc.getInput().getMouseX() + ", " + gc.getInput().getMouseY());
@@ -83,6 +95,14 @@ public class DixitGame extends AbstractGame {
         if(state==State.START_GAME){
             if (gc.getInput().isMouseButtonDown(3)) {
                 System.out.println("Left mouse clicked at:" + gc.getInput().getMouseX() + ", " + gc.getInput().getMouseY());
+            }
+        } if(state==State.SHUFLE_CARDS){
+            if (gc.getInput().isMouseButtonDown(3)) {
+                System.out.println("Left mouse clicked at:" + gc.getInput().getMouseX() + ", " + gc.getInput().getMouseY());
+            }
+            if(!temp){
+                temp=true;
+                cardImage=new CardImage(1, gc.getWidth(), gc.getHeight());
             }
         }
     }
@@ -104,6 +124,24 @@ public class DixitGame extends AbstractGame {
             renderer.setzDepth(3);
             renderer.drawText("Witaj: "+ LoginManager.getName(), (int) (gc.getWidth() / 2.0f), (int) (((gc.getHeight() - rectangleTransparent.getH())) / 2.0f) + 10, 0xff000000, 1, true);
             renderer.drawText("Oczekiwanie na pozostalych graczy",(int) (gc.getWidth() / 2.0f),(int) (gc.getHeight() / 2.0f),0xff555555,1,true);
+        }
+        if (this.getState() == State.START_GAME) {
+            renderer.setzDepth(1);
+            renderer.drawImage(startImage, (int) ((gc.getWidth() - startImage.getW()) / 2.0), (int) ((gc.getHeight() - startImage.getH()) / 2.0));
+            renderer.setzDepth(2);
+            renderer.drawImage(rectangleTransparent, (int) ((gc.getWidth() - rectangleTransparent.getW()) / 2.0f), (int) (((gc.getHeight() - rectangleTransparent.getH())) / 2.0f));
+            renderer.setzDepth(3);
+            renderer.drawText("Witaj: "+ LoginManager.getName(), (int) (gc.getWidth() / 2.0f), (int) (((gc.getHeight() - rectangleTransparent.getH())) / 2.0f) + 10, 0xff000000, 1, true);
+            renderer.drawText(gc.getServerListener().getServerRequestLast(),(int) (gc.getWidth() / 2.0f),(int) (gc.getHeight() / 2.0f),0xff555555,1,true);
+        }
+        if (this.getState() == State.SHUFLE_CARDS) {
+            renderer.setzDepth(1);
+            renderer.drawImage(cardImage, (int) ((gc.getWidth() - startImage.getW()) / 2.0), (int) ((gc.getHeight() - startImage.getH()) / 2.0));
+//            renderer.setzDepth(2);
+//            renderer.drawImage(rectangleTransparent, (int) ((gc.getWidth() - rectangleTransparent.getW()) / 2.0f), (int) (((gc.getHeight() - rectangleTransparent.getH())) / 2.0f));
+//            renderer.setzDepth(3);
+//            renderer.drawText("Witaj: "+ LoginManager.getName(), (int) (gc.getWidth() / 2.0f), (int) (((gc.getHeight() - rectangleTransparent.getH())) / 2.0f) + 10, 0xff000000, 1, true);
+//            renderer.drawText(gc.getServerListener().getServerRequestLast(),(int) (gc.getWidth() / 2.0f),(int) (gc.getHeight() / 2.0f),0xff555555,1,true);
         }
     }
 

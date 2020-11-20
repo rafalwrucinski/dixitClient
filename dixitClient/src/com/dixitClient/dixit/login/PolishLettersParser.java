@@ -32,6 +32,10 @@ public class PolishLettersParser {
                 chars[i]=(char)90;
             } else if(chars[i]==378 || chars[i]==380){
                 chars[i]=(char)122;
+            } else if(chars[i]==324){
+                chars[i]=(char)110;
+            } else if(chars[i]==323){
+                chars[i]=(char)78;
             }
         }
         String stringResult= "";

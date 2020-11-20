@@ -16,6 +16,7 @@ public class ServerListener implements Runnable {
     public ServerListener(ServerClientManager serverClientManager) throws IOException {
         this.serverClientManager =  serverClientManager;
         in = new BufferedReader(new InputStreamReader(serverClientManager.getSocket().getInputStream()));
+        listOfResponses= new ArrayList<>();
     }
 
     @Override
@@ -24,7 +25,6 @@ public class ServerListener implements Runnable {
             while (true){
                 serverRequest = in.readLine();
                 if(!serverRequest.equals(serverRequestLast)){
-                    listOfResponses.add(serverRequest);
                     serverRequestLast=serverRequest;
                 }
             }
@@ -39,10 +39,7 @@ public class ServerListener implements Runnable {
         }
     }
 
-    public String getServerRequest() {
-        return serverRequest;
-    }
-    public ArrayList<String> getlistOfResponses(){
-        return listOfResponses;
+    public String getServerRequestLast() {
+        return serverRequestLast;
     }
 }
